@@ -1,0 +1,546 @@
+//---------------------------------------------------------------------------
+
+#include <fmx.h>
+#pragma hdrstop
+
+#include "uRectangleForm.h"
+#include <cmath>                        // for math functions - trig is in radians
+#include <complex>                      // for complex number functions
+
+typedef std::complex<double> dcomp;     // use dcomp type for complex number variables
+typedef System::UnicodeString ustring;
+const dcomp i = dcomp(0.0, 1.0);
+//---------------------------------------------------------------------------
+#pragma package(smart_init)
+#pragma resource "*.fmx"
+TRectangleForm *RectangleForm;
+//---------------------------------------------------------------------------
+__fastcall TRectangleForm::TRectangleForm(TComponent* Owner)
+	: TForm(Owner)
+{
+}
+//---------------------------------------------------------------------------
+double TRectangleForm::posOrNegCubeRoot(double base)
+{
+	if (base < 0.0)                       // if base is negative then std::pow won't work -
+		{                                 // so need to flip the signs first then re-flip them
+			base = -(base);
+			return -(std::pow(base, (1.0/3.0)));
+		}
+		else
+		{
+			return std::pow(base, (1.0/3.0));
+		}
+}
+
+dcomp TRectangleForm::posOrNegSquareRoot(double base)
+{
+	if (base < 0.0)                       // if base is negative then std::pow won't work -
+		{                             	  // so need to flip sign of base then multiply by i
+			base = -(base);
+			return (std::pow(base, 0.5)) * i;
+		}
+		else
+		{
+			return std::pow(base, 0.5);
+		}
+}
+
+dcomp TRectangleForm::complexSquareRoot(dcomp base)
+{
+    return std::sqrt(dcomp(base.real(), base.imag()));
+}
+
+// this determines how many real roots there are to the cubic
+// where the cubic is in the form aY^3 + bY^2 + cY + d
+// there are three cases based on the result of the function:
+// h > 0 -> only 1 real root
+// f, g, h = 0 -> 3 identical real roots
+// h <= 0 -> 3 unique real roots
+double TRectangleForm::getRealCubicRoots(double cA, double cB, double cC, double cD)
+{
+	// f = ((3c/a) - (b^2/a^2)) / 3
+	double cF = (((3.0 * cC) / cA) - ((cB * cB) / (cA * cA))) / 3.0;
+
+	// g = ((2b^3/a^3) - (9bc/a^2) + (27d/a)) / 27
+	double cG = (((2.0 * cB * cB * cB) / (cA * cA * cA)) - ((9.0 * cB * cC) / (cA * cA))
+				+ ((27.0 * cD) / cA)) / 27.0;
+
+	// h = (g^2/4) + (f^3/27)
+	double cH = ((cG * cG) / 4.0) + ((cF * cF * cF) / 27.0);
+
+	return cH;
+}
+
+// h > 0 -> 1 real root case
+double TRectangleForm::solveOneRealCubicRoot(double cA, double cB, double cC, double cD, double cH)
+{
+	// g = ((2b^3/a^3) - (9bc/a^2) + (27d/a)) / 27
+	double cG = (((2.0 * cB * cB * cB) / (cA * cA * cA)) - ((9.0 * cB * cC) / (cA * cA))
+				+ ((27.0 * cD) / cA)) / 27.0;
+
+	// r = -(g/2) + h^(1/2)
+	double cR = -(cG / 2.0) + std::pow(cH, 0.5);
+
+	// s = r^(1/3)
+	double cS = this->posOrNegCubeRoot(cR);
+
+	// t = -(g/2) - h^(1/2)
+	double cT = -(cG / 2.0) - std::pow(cH, 0.5);
+
+	// u = t^(1/3)
+	double cU = this->posOrNegCubeRoot(cT);
+
+	// root = (s + u) - (b/3a)
+	double realRoot = cS + cU - (cB / (3.0 * cA));
+
+	return realRoot;
+}
+
+dcomp TRectangleForm::solveFirstComplexCubicRoot(double cA, double cB, double cC, double cD, double cH)
+{
+	// g = ((2b^3/a^3) - (9bc/a^2) + (27d/a)) / 27
+	double cG = (((2.0 * cB * cB * cB) / (cA * cA * cA)) - ((9.0 * cB * cC) / (cA * cA))
+				+ ((27.0 * cD) / cA)) / 27.0;
+
+	// r = -(g/2) + h^(1/2)
+	double cR = -(cG / 2.0) + std::pow(cH, 0.5);
+
+	// s = r^(1/3)
+	double cS = this->posOrNegCubeRoot(cR);
+
+	// t = -(g/2) - h^(1/2)
+	double cT = -(cG / 2.0) - std::pow(cH, 0.5);
+
+	// u = t^(1/3)
+	double cU = this->posOrNegCubeRoot(cT);
+
+	// firstcomplexroot = -(s + u)/2 - (b/3a) + ((s - u)*(3)^(1/2)/2)i
+	dcomp firstComplexRoot = (-(cS + cU) / 2.0) - (cB / (3.0 * cA)) +
+							 (((cS - cU) * std::pow(3.0, 0.5)) / 2.0) * i;
+
+	return firstComplexRoot;
+}
+
+dcomp TRectangleForm::solveSecondComplexCubicRoot(double cA, double cB, double cC, double cD, double cH)
+{
+    // g = ((2b^3/a^3) - (9bc/a^2) + (27d/a)) / 27
+	double cG = (((2.0 * cB * cB * cB) / (cA * cA * cA)) - ((9.0 * cB * cC) / (cA * cA))
+				+ ((27.0 * cD) / cA)) / 27.0;
+
+	// r = -(g/2) + h^(1/2)
+	double cR = -(cG / 2.0) + std::pow(cH, 0.5);
+
+	// s = r^(1/3)
+	double cS = this->posOrNegCubeRoot(cR);
+
+	// t = -(g/2) - h^(1/2)
+	double cT = -(cG / 2.0) - std::pow(cH, 0.5);
+
+	// u = t^(1/3)
+	double cU = this->posOrNegCubeRoot(cT);
+
+	// secondcomplexroot = -(s + u)/2 - (b/3a) - ((s - u)*(3)^(1/2)/2)i
+	dcomp secondComplexRoot = (-(cS + cU) / 2.0) - (cB / (3.0 * cA)) -
+							 (((cS - cU) * std::pow(3.0, 0.5)) / 2.0) * i;
+
+	return secondComplexRoot;
+}
+
+// h <= 0 -> 3 real roots case
+double TRectangleForm::solveFirstRealCubicRoot(double cA, double cB, double cC, double cD, double cH)
+{
+	// g = ((2b^3/a^3) - (9bc/a^2) + (27d/a)) / 27
+	double cG = (((2.0 * cB * cB * cB) / (cA * cA * cA)) - ((9.0 * cB * cC) / (cA * cA))
+				+ ((27.0 * cD) / cA)) / 27.0;
+
+	// i = ((g^2/4) - h)^(1/2)
+	double cI = std::pow((((cG * cG) / 4.0) - cH), 0.5);              // cH is -ve so cI is always +ve
+
+	// j = i^(1/3)
+	double cJ = std::pow(cI, (1.0/3.0));                              // cJ is always +ve
+
+	// k = arccos(-(g/2i))
+	double cK = std::acos(-(cG / (2.0 * cI)));
+
+	// m = cos(k/3)
+	double cM = std::cos(cK / 3.0);
+
+	// p = (b/3a) * -1
+	double cP = -(cB / (3.0 * cA));
+
+	// first root = 2jm + p
+	double firstRoot = (2.0 * cJ * cM) + cP;
+
+    return firstRoot;
+}
+
+double TRectangleForm::solveSecondRealCubicRoot(double cA, double cB, double cC, double cD, double cH)
+{
+	// g = ((2b^3/a^3) - (9bc/a^2) + (27d/a)) / 27
+	double cG = (((2.0 * cB * cB * cB) / (cA * cA * cA)) - ((9.0 * cB * cC) / (cA * cA))
+				+ ((27.0 * cD) / cA)) / 27.0;
+
+	// i = ((g^2/4) - h)^(1/2)
+	double cI = std::pow((((cG * cG) / 4.0) - cH), 0.5);             // cH is -ve so cI is always +ve
+
+	// j = i^(1/3)
+	double cJ = std::pow(cI, (1.0/3.0));                             // cJ is always +ve
+
+	// k = arccos(-(g/2i))
+	double cK = std::acos(-(cG / (2.0 * cI)));
+
+	// l = j * -1
+	double cL = -(cJ);
+
+	// m = cos(k/3)
+	double cM = std::cos(cK / 3.0);
+
+	// n = 3^(1/2) * sin(k/3)
+	double cN = std::pow(3.0, 0.5) * std::sin(cK / 3.0);
+
+	// p = (b/3a) * -1
+	double cP = -(cB / (3.0 * cA));
+
+	// second root = l(m + n) + p
+	double secondRoot = cL * (cM + cN) + cP;
+
+	return secondRoot;
+}
+
+double TRectangleForm::solveThirdRealCubicRoot(double cA, double cB, double cC, double cD, double cH)
+{
+	// g = ((2b^3/a^3) - (9bc/a^2) + (27d/a)) / 27
+	double cG = (((2.0 * cB * cB * cB) / (cA * cA * cA)) - ((9.0 * cB * cC) / (cA * cA))
+				+ ((27.0 * cD) / cA)) / 27.0;
+
+	// i = ((g^2/4) - h)^(1/2)
+	double cI = std::pow((((cG * cG) / 4.0) - cH), 0.5);            // cH is -ve so cI is always +ve
+
+	// j = i^(1/3)
+	double cJ = std::pow(cI, (1.0/3.0));                            // cJ is always +ve
+
+	// k = arccos(-(g/2i))
+	double cK = std::acos(-(cG / (2.0 * cI)));
+
+	// l = j * -1
+	double cL = -(cJ);
+
+	// m = cos(k/3)
+	double cM = std::cos(cK / 3.0);
+
+	// n = 3^(1/2) * sin(k/3)
+	double cN = std::pow(3.0, 0.5) * std::sin(cK / 3.0);
+
+	// p = (b/3a) * -1
+	double cP = -(cB / (3.0 * cA));
+
+	// third root = l(m - n) + p
+	double thirdRoot = cL * (cM - cN) + cP;
+
+	return thirdRoot;
+}
+
+dcomp TRectangleForm::solveFirstQuarticRoot(dcomp qP, dcomp qQ, dcomp qR)
+{
+	return (qP + qQ + qR);
+}
+
+dcomp TRectangleForm::solveSecondQuarticRoot(dcomp qP, dcomp qQ, dcomp qR)
+{
+	return (qP - qQ - qR);
+}
+
+dcomp TRectangleForm::solveThirdQuarticRoot(dcomp qP, dcomp qQ, dcomp qR)
+{
+	return (-qP + qQ - qR);
+}
+
+dcomp TRectangleForm::solveFourthQuarticRoot(dcomp qP, dcomp qQ, dcomp qR)
+{
+	return (-qP - qQ + qR);
+}
+
+// where the quartic is in the form aX^4 + cX^2 + dX + e
+// there is no cubic element in this calculation (so bX^3 isn't needed)
+double TRectangleForm::solveQuartic(double qA, double qC, double qD, double qE, double sheetHeight)
+{
+    // divide all the coefficients by qA first (so qA always = 1)
+	qA /= qA;
+	qC /= qA;
+	qD /= qA;
+    qE /= qA;
+
+	// f = c - (3b^2/8)
+	// this is normally the first step but not needed here as b = 0 (so f = c)
+
+	// g = d + (b^3/8) - (bc/2)
+	// again b = 0 so this simplifies to g = d
+
+	// h = e - (3b^4/256) + (cb^2/16) - (bd/4)
+	// b = 0 so h = e
+
+	// The next step is to use f, g, h in this cubic:
+	// Y^3 + (f/2)Y^2 + ((f^2 - 4h)/16)Y - g^2/64 = 0
+	// f = c, g = d, h = e -> therefore...
+	// Y^3 + (c/2)Y^2 + ((c^2 - 4e)/16)Y - d^2/64 = 0
+
+	// define the cubic coefficients from the previous step
+	double cA, cB, cC, cD;
+	cA = 1.0;
+	cB = qC / 2.0;
+	cC = ((qC * qC) - (4.0 * qE)) / 16.0;
+	cD = -((qD * qD) / 64.0);
+
+	double cH = this->getRealCubicRoots(cA, cB, cC, cD);
+	if (cH > 0.0)
+	{
+		// one real root exists
+		double realRoot = this->solveOneRealCubicRoot(cA, cB, cC, cD, cH);
+		dcomp firstComplexRoot = this->solveFirstComplexCubicRoot(cA, cB, cC, cD, cH);
+		dcomp secondComplexRoot = this->solveSecondComplexCubicRoot(cA, cB, cC, cD, cH);
+
+		// define the quartic roots
+		dcomp firstQuarticRoot(0.0, 0.0);
+		dcomp secondQuarticRoot(0.0, 0.0);
+		dcomp thirdQuarticRoot(0.0, 0.0);
+		dcomp fourthQuarticRoot(0.0, 0.0);
+
+		// p = firstcomplexroot^(1/2)
+		dcomp qP = this->complexSquareRoot(firstComplexRoot);
+
+		// q = secondcomplexroot^(1/2)
+		dcomp qQ = this->complexSquareRoot(secondComplexRoot);
+
+		// r = -d/8pq
+		dcomp qR = -(qD / (8.0 * qP * qQ));
+
+        // s = b/4a
+		// however b = 0 (from definition at start of this function)
+		// so s = 0, no need to define qS
+
+        firstQuarticRoot = this->solveFirstQuarticRoot(qP, qQ, qR);
+		secondQuarticRoot = this->solveSecondQuarticRoot(qP, qQ, qR);
+		thirdQuarticRoot = this->solveThirdQuarticRoot(qP, qQ, qR);
+		fourthQuarticRoot = this->solveFourthQuarticRoot(qP, qQ, qR);
+
+		// the result must adhere to 3 conditions:
+		// i. no imaginary component (i = 0)
+		// ii. real component is non-negative
+		// iii. real component is less than the sheetheight
+
+		// difficult to test for i. may implement in future
+
+        if (firstQuarticRoot.real() > 0.0 && firstQuarticRoot.real() < sheetHeight)
+		{
+			return firstQuarticRoot.real();
+		}
+		else if (secondQuarticRoot.real() > 0.0 && secondQuarticRoot.real() < sheetHeight)
+		{
+			return secondQuarticRoot.real();
+		}
+		else if (thirdQuarticRoot.real() > 0.0 && thirdQuarticRoot.real() < sheetHeight)
+		{
+			return thirdQuarticRoot.real();
+		}
+		else if (fourthQuarticRoot.real() > 0.0 && fourthQuarticRoot.real() < sheetHeight)
+		{
+			return fourthQuarticRoot.real();
+		}
+		else
+        // returning -1 indicates that the piecewidth entered is too large
+		{
+			return -1.0;
+		}
+	}
+	else
+	{
+		// three real roots exist
+		double firstCubicRoot = this->solveFirstRealCubicRoot(cA, cB, cC, cD, cH);
+		double secondCubicRoot = this->solveSecondRealCubicRoot(cA, cB, cC, cD, cH);
+		double thirdCubicRoot = this->solveThirdRealCubicRoot(cA, cB, cC, cD, cH);
+
+		// define the quartic roots
+		dcomp firstQuarticRoot(0.0, 0.0);
+		dcomp secondQuarticRoot(0.0, 0.0);
+		dcomp thirdQuarticRoot(0.0, 0.0);
+		dcomp fourthQuarticRoot(0.0, 0.0);
+
+		// need to pick 2 non-zero cubic roots
+		if (firstCubicRoot != 0 && secondCubicRoot != 0)
+		{
+			// p = firstcubicroot^(1/2)
+			dcomp qP = this->posOrNegSquareRoot(firstCubicRoot);
+
+			// q = secondcubicroot^(1/2)
+			dcomp qQ = this->posOrNegSquareRoot(secondCubicRoot);
+
+			// r = -d/8pq
+			dcomp qR = -(qD / (8.0 * qP * qQ));
+
+			// s = b/4a
+			// however b = 0 (from definition at start of this function)
+			// so s = 0, no need to define qS
+
+			firstQuarticRoot = this->solveFirstQuarticRoot(qP, qQ, qR);
+			secondQuarticRoot = this->solveSecondQuarticRoot(qP, qQ, qR);
+			thirdQuarticRoot = this->solveThirdQuarticRoot(qP, qQ, qR);
+			fourthQuarticRoot = this->solveFourthQuarticRoot(qP, qQ, qR);
+		}
+		else if (firstCubicRoot != 0 && thirdCubicRoot != 0)
+		{
+			// p = firstcubicroot^(1/2)
+			dcomp qP = this->posOrNegSquareRoot(firstCubicRoot);
+
+			// q = thirdcubicroot^(1/2)
+			dcomp qQ = this->posOrNegSquareRoot(thirdCubicRoot);
+
+			// r = -d/8pq
+			dcomp qR = -(qD / (8.0 * qP * qQ));
+
+			// s = b/4a
+			// however b = 0 (from definition at start of this function)
+			// so s = 0, no need to define qS
+
+			firstQuarticRoot = this->solveFirstQuarticRoot(qP, qQ, qR);
+			secondQuarticRoot = this->solveSecondQuarticRoot(qP, qQ, qR);
+			thirdQuarticRoot = this->solveThirdQuarticRoot(qP, qQ, qR);
+			fourthQuarticRoot = this->solveFourthQuarticRoot(qP, qQ, qR);
+		}
+		else if (secondCubicRoot != 0 && thirdCubicRoot != 0)
+		{
+			// p = secondcubicroot^(1/2)
+			dcomp qP = this->posOrNegSquareRoot(secondCubicRoot);
+
+			// q = thirdcubicroot^(1/2)
+			dcomp qQ = this->posOrNegSquareRoot(thirdCubicRoot);
+
+			// r = -d/8pq
+			dcomp qR = -(qD / (8.0 * qP * qQ));
+
+			// s = b/4a
+			// however b = 0 (from definition at start of this function)
+			// so s = 0, no need to define qS
+
+			firstQuarticRoot = this->solveFirstQuarticRoot(qP, qQ, qR);
+			secondQuarticRoot = this->solveSecondQuarticRoot(qP, qQ, qR);
+			thirdQuarticRoot = this->solveThirdQuarticRoot(qP, qQ, qR);
+			fourthQuarticRoot = this->solveFourthQuarticRoot(qP, qQ, qR);
+		}
+
+		// the result must adhere to 3 conditions:
+		// i. no imaginary component (i = 0)
+		// ii. real component is non-negative
+		// iii. real component is less than the sheetheight
+
+		// difficult to test for i. may implement in future
+
+		if (firstQuarticRoot.real() > 0.0 && firstQuarticRoot.real() < sheetHeight)
+		{
+			return firstQuarticRoot.real();
+		}
+		else if (secondQuarticRoot.real() > 0.0 && secondQuarticRoot.real() < sheetHeight)
+		{
+			return secondQuarticRoot.real();
+		}
+		else if (thirdQuarticRoot.real() > 0.0 && thirdQuarticRoot.real() < sheetHeight)
+		{
+			return thirdQuarticRoot.real();
+		}
+		else if (fourthQuarticRoot.real() > 0.0 && fourthQuarticRoot.real() < sheetHeight)
+		{
+			return fourthQuarticRoot.real();
+		}
+		else
+		// returning -1 indicates that the piecewidth entered is too large
+		{
+			return -1.0;
+		}
+	}
+}
+
+
+void __fastcall TRectangleForm::btnCalcClick(TObject *Sender)
+{
+
+	// define the parameters as entered by the user
+	double sheetWidth(0.0);
+	double sheetHeight(0.0);
+	double pieceWidth(0.0);
+	double sheetTrim(0.0);
+
+	ustring stringSWidth = this->edtSheetWidth->Text;
+	ustring stringSHeight = this->edtSheetHeight->Text;
+	ustring stringPWidth = this->edtPieceWidth->Text;
+	ustring stringSTrim = this->edtSheetTrim->Text;
+
+	// can only proceed if all parameters are numeric (i.e. no strings)
+    // this currently fails for blank strings too ('') - maybe change these to 0.0 by default?
+	if ((stringSWidth.ToDouble() || stringSWidth.ToDouble() == 0.0) && (stringSHeight.ToDouble() || stringSHeight.ToDouble() == 0.0)
+		&& (stringPWidth.ToDouble() || stringPWidth.ToDouble() == 0.0) && (stringSTrim.ToDouble() || stringSTrim.ToDouble() == 0.0))
+	{
+		sheetWidth = stringSWidth.ToDouble();
+		sheetHeight = stringSHeight.ToDouble();
+		pieceWidth = stringPWidth.ToDouble();
+		sheetTrim = stringSTrim.ToDouble();
+	}
+	else
+	{
+		ShowMessage("All parameters must be numeric. Please try again.");
+	}
+
+	// all parameters must be positive and non-zero
+	if (sheetWidth > 0.0 && sheetHeight > 0.0 && pieceWidth > 0.0)
+	{
+		// sheettrim cannot be negative, but can be zero
+		if (sheetTrim >= 0.0)
+		{
+			// apply the sheet trim
+			sheetWidth = sheetWidth - sheetTrim - sheetTrim;
+			sheetHeight = sheetHeight - sheetTrim - sheetTrim;
+
+			// piecewidth must be greater than sheetwidth
+			if (pieceWidth > sheetWidth)
+			{
+				// define the quartic coefficients
+				double qA, qC, qD, qE;
+				qA = 1.0;
+
+				// a = sheetwidth, b = sheetheight, p = piecewidth
+				// qC = -(2p^2 + a^2 + b^2)
+				qC = -((2.0 * (pieceWidth * pieceWidth)) + (sheetWidth * sheetWidth) + (sheetHeight * sheetHeight));
+
+				// qD = 4abp
+				qD = 4.0 * sheetWidth * sheetHeight * pieceWidth;
+
+				// qE = -p^2(a^2 + b^2 - p^2)
+				qE = (-(pieceWidth * pieceWidth))
+					* ((sheetWidth * sheetWidth) + (sheetHeight * sheetHeight) - (pieceWidth * pieceWidth));
+
+				double result = this->solveQuartic(qA, qC, qD, qE, sheetHeight);
+				if (result != -1.0)
+				{
+					this->edtPieceHeight->Text = FloatToStr(result);
+				}
+				else
+				{
+					ShowMessage("Piece width (p) too large for sheet. Please try again.");
+				}
+			}
+			else
+			{
+				ShowMessage("Piece width (p) must be greater than sheet width (a). Please try again.");
+			}
+		}
+		else
+		{
+            ShowMessage("Sheet trim cannot be negative. Please try again.");
+        }
+	}
+	else
+	{
+		ShowMessage("All parameters must be positive and non-zero. Please try again.");
+	}
+
+}
+//---------------------------------------------------------------------------

@@ -1,0 +1,17 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<BorlandProject>
+	<Transactions>
+    <Transaction>2016/12/01 11:18:16.000.466,=C:\Users\Harry\Documents\Embarcadero\Studio\Projects\Unit1.cpp</Transaction>
+    <Transaction>2016/12/01 11:18:16.000.523,=C:\Users\Harry\Documents\Embarcadero\Studio\Projects\Project1PCH1.h</Transaction>
+    <Transaction>2016/12/01 11:18:28.000.384,C:\Users\Harry\Documents\Embarcadero\Studio\Projects\Project1.cbproj=C:\Users\Harry\Documents\Embarcadero\Studio\Projects\NewRectangleSolver.cbproj</Transaction>
+    <Transaction>2016/12/01 11:18:28.000.379,C:\Users\Harry\Documents\Embarcadero\Studio\Projects\Project1PCH1.h=C:\Users\Harry\Documents\Embarcadero\Studio\Projects\NewRectangleSolverPCH1.h</Transaction>
+    <Transaction>2016/12/01 11:18:45.000.825,C:\Users\Harry\Documents\Embarcadero\Studio\Projects\Unit1.fmx=C:\Users\Harry\Documents\Embarcadero\Studio\Projects\uRectangleForm.fmx</Transaction>
+    <Transaction>2016/12/01 11:18:45.000.825,C:\Users\Harry\Documents\Embarcadero\Studio\Projects\Unit1.cpp=C:\Users\Harry\Documents\Embarcadero\Studio\Projects\uRectangleForm.cpp</Transaction>
+    <Transaction>2016/12/01 11:18:45.000.825,C:\Users\Harry\Documents\Embarcadero\Studio\Projects\Unit1.h=C:\Users\Harry\Documents\Embarcadero\Studio\Projects\uRectangleForm.h</Transaction>
+    <Transaction>2016/12/01 11:19:26.000.335,C:\Users\Harry\Documents\Embarcadero\Studio\Projects\NewRectangleSolverPCH1.h=C:\Users\Harry\Documents\Embarcadero\Studio\Projects\NewRectangleSolver\NewRectangleSolverPCH1.h</Transaction>
+    <Transaction>2016/12/01 11:19:28.000.749,C:\Users\Harry\Documents\Embarcadero\Studio\Projects\uRectangleForm.h=C:\Users\Harry\Documents\Embarcadero\Studio\Projects\NewRectangleSolver\uRectangleForm.h</Transaction>
+    <Transaction>2016/12/01 11:19:28.000.749,C:\Users\Harry\Documents\Embarcadero\Studio\Projects\uRectangleForm.fmx=C:\Users\Harry\Documents\Embarcadero\Studio\Projects\NewRectangleSolver\uRectangleForm.fmx</Transaction>
+    <Transaction>2016/12/01 11:19:28.000.749,C:\Users\Harry\Documents\Embarcadero\Studio\Projects\uRectangleForm.cpp=C:\Users\Harry\Documents\Embarcadero\Studio\Projects\NewRectangleSolver\uRectangleForm.cpp</Transaction>
+    <Transaction>2016/12/01 11:19:29.000.875,C:\Users\Harry\Documents\Embarcadero\Studio\Projects\NewRectangleSolver.cbproj=C:\Users\Harry\Documents\Embarcadero\Studio\Projects\NewRectangleSolver\NewRectangleSolver.cbproj</Transaction>
+  </Transactions>
+</BorlandProject>
